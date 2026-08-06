@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Minimum capability set for the primary Maestro window","local":true,"windows":["main","project-*"],"permissions":["core:default"]}}

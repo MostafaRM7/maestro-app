@@ -1,0 +1,24 @@
+[package]
+name = "maestro-project"
+description = "Capability-scoped project, file, search, and Git inspection services for Maestro"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+ignore.workspace = true
+regex.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+rustix.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

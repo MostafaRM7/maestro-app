@@ -1,0 +1,15 @@
+[package]
+name = "maestro-redaction"
+description = "Deterministic secret redaction for Maestro logs, events, errors, and exports"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+license = "MIT"
+repository = "https://github.com/maestro-app/maestro-app"
+authors = ["Maestro contributors"]
+
+[dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

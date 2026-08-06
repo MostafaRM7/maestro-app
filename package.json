@@ -1,0 +1,19 @@
+{
+  "name": "maestro-app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter @maestro/desktop build",
+    "dev": "pnpm --filter @maestro/desktop tauri dev",
+    "lint": "pnpm --filter @maestro/desktop lint",
+    "tauri": "pnpm --filter @maestro/desktop tauri",
+    "test": "pnpm --filter @maestro/desktop test",
+    "typecheck": "pnpm --filter @maestro/desktop typecheck"
+  }
+}
+

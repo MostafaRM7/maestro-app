@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Maestro Foundation"
+  short_description: "Preserve daemon, session, and security invariants"
+  default_prompt: "Use $maintain-maestro-foundation to implement this Maestro process, IPC, lifecycle, or adapter change safely."

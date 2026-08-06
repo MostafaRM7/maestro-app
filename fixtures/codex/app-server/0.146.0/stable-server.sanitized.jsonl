@@ -1,0 +1,5 @@
+{"id":1,"result":{"userAgent":"maestro_spike/0.146.0 (synthetic fixture)","codexHome":"/fixture/codex-home","platformFamily":"unix","platformOs":"macos"}}
+{"method":"remoteControl/status/changed","params":{"status":"disabled","serverName":"[REDACTED HOST]","installationId":"[REDACTED ID]","environmentId":null},"emittedAtMs":0}
+{"id":3,"result":{"data":[{"id":"fixture-model","model":"fixture-model","displayName":"Fixture model","description":"Sanitized conformance value","hidden":false,"isDefault":true,"supportedReasoningEfforts":[],"defaultReasoningEffort":"medium","inputModalities":["text"],"supportsPersonality":false,"additionalSpeedTiers":[],"serviceTiers":[],"defaultServiceTier":null}],"nextCursor":null}}
+{"id":2,"result":{"account":null,"requiresOpenaiAuth":false}}
+{"id":4,"result":{"data":[],"nextCursor":null,"backwardsCursor":null}}

@@ -1,0 +1,403 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      package_native:
+        description: Build unsigned native installation artifacts
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  MACOSX_DEPLOYMENT_TARGET: "13.0"
+  NODE_VERSION: "22.23.1"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  rust-quality:
+    name: Rust quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential \
+            libayatana-appindicator3-dev \
+            libdbus-1-dev \
+            libsecret-1-dev \
+            libsqlcipher-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - name: Select pinned Rust toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version --verbose
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          shared-key: ubuntu-rust-quality
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Run Clippy
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+
+      - name: Build deterministic fake agent
+        run: cargo build --locked -p maestro-fake-agent
+
+      - name: Run Rust tests
+        env:
+          MAESTRO_FAKE_AGENT: ${{ github.workspace }}/target/debug/maestro-fake-agent
+        run: cargo test --locked --workspace --all-features
+
+  frontend-quality:
+    name: Frontend quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          package-manager-cache: false
+
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint frontend
+        run: pnpm lint
+
+      - name: Type-check frontend
+        run: pnpm typecheck
+
+      - name: Run frontend tests
+        run: pnpm test
+
+      - name: Build frontend
+        run: pnpm build
+
+  dependency-policy:
+    name: Dependency and license policy
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Check Rust advisories, licenses, bans, and sources
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+        with:
+          rust-version: "1.97.1"
+          command: check
+          arguments: --all-features
+
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          package-manager-cache: false
+
+      - name: Verify provider and local IPC boundaries
+        run: node scripts/verify-m0-boundaries.mjs
+
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit JavaScript dependency graph
+        run: pnpm audit --audit-level high
+
+  network-denied-tests:
+    name: Deterministic tests without network
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential \
+            libayatana-appindicator3-dev \
+            libdbus-1-dev \
+            libsecret-1-dev \
+            libsqlcipher-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          package-manager-cache: false
+
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          shared-key: ubuntu-network-denied
+
+      - name: Build deterministic fake agent
+        run: cargo build --locked -p maestro-fake-agent
+
+      - name: Compile Rust tests before isolation
+        run: cargo test --locked --workspace --all-features --no-run
+
+      - name: Run Rust tests in a network namespace with no routes
+        env:
+          MAESTRO_FAKE_AGENT: ${{ github.workspace }}/target/debug/maestro-fake-agent
+        run: |
+          runner_uid="$(id -u)"
+          runner_gid="$(id -g)"
+          sudo \
+            HOME="$HOME" \
+            CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}" \
+            RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}" \
+            PATH="$PATH" \
+            CARGO_NET_OFFLINE=true \
+            MAESTRO_FAKE_AGENT="$MAESTRO_FAKE_AGENT" \
+            unshare --net --mount-proc \
+            /usr/bin/setpriv \
+            --reuid="$runner_uid" \
+            --regid="$runner_gid" \
+            --init-groups \
+            bash scripts/run-without-network.sh \
+            cargo test --locked --offline --workspace --all-features
+
+      - name: Run frontend tests in a network namespace with no routes
+        run: |
+          runner_uid="$(id -u)"
+          runner_gid="$(id -g)"
+          sudo \
+            HOME="$HOME" \
+            PATH="$PATH" \
+            unshare --net --mount-proc \
+            /usr/bin/setpriv \
+            --reuid="$runner_uid" \
+            --regid="$runner_gid" \
+            --init-groups \
+            bash scripts/run-without-network.sh \
+            pnpm test
+
+  dependency-review:
+    name: Pull request dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          license-check: true
+          allow-licenses: >-
+            0BSD, Apache-2.0, BSD-2-Clause, BSD-3-Clause, BSL-1.0,
+            CC0-1.0, ISC, MIT, MIT-0, OpenSSL, Unicode-3.0,
+            Unicode-DFS-2016, Zlib
+
+  native-check:
+    name: Native test (${{ matrix.label }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS ARM64
+            runner: macos-15
+            target: aarch64-apple-darwin
+          - label: macOS x86_64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - label: Ubuntu 22.04 x86_64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential \
+            libayatana-appindicator3-dev \
+            libdbus-1-dev \
+            libsecret-1-dev \
+            libsqlcipher-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - name: Select target toolchain
+        run: |
+          rustup target add "${{ matrix.target }}"
+          rustc --version --verbose
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Check native workspace
+        run: cargo check --locked --workspace --all-targets --all-features --target "${{ matrix.target }}"
+
+      - name: Build deterministic fake agent
+        run: cargo build --locked -p maestro-fake-agent --target "${{ matrix.target }}"
+
+      - name: Run native Rust tests
+        env:
+          MAESTRO_FAKE_AGENT: ${{ github.workspace }}/target/${{ matrix.target }}/debug/maestro-fake-agent
+        run: cargo test --locked --workspace --all-features --target "${{ matrix.target }}"
+
+  package-native:
+    name: Unsigned package (${{ matrix.label }})
+    if: github.event_name == 'workflow_dispatch' && inputs.package_native
+    needs: [rust-quality, frontend-quality, dependency-policy, native-check]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS ARM64
+            artifact: maestro-macos-arm64-unsigned
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - label: macOS x86_64
+            artifact: maestro-macos-x86_64-unsigned
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - label: Ubuntu 22.04 x86_64
+            artifact: maestro-ubuntu-x86_64-unsigned
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Linux packaging prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential \
+            libayatana-appindicator3-dev \
+            libdbus-1-dev \
+            libsecret-1-dev \
+            libsqlcipher-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config
+
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Select native Rust target
+        run: rustup target add "${{ matrix.target }}"
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          key: package-${{ matrix.target }}
+
+      - name: Build unsigned packages
+        run: >-
+          pnpm tauri build
+          --target "${{ matrix.target }}"
+          --bundles "${{ matrix.bundles }}"
+
+      - name: Upload unsigned packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            target/${{ matrix.target }}/release/bundle/**
+            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,5 @@
+{"method":"initialize","id":1,"params":{"clientInfo":{"name":"maestro_spike","title":"Maestro compatibility spike","version":"0.0.0-spike"},"capabilities":{"experimentalApi":false}}}
+{"method":"initialized","params":{}}
+{"method":"account/read","id":2,"params":{"refreshToken":false}}
+{"method":"model/list","id":3,"params":{"limit":1,"includeHidden":false}}
+{"method":"thread/list","id":4,"params":{"limit":1,"useStateDbOnly":true}}

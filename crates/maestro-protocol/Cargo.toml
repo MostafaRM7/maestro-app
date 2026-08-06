@@ -1,0 +1,23 @@
+[package]
+name = "maestro-protocol"
+description = "Versioned local IPC protocol for Maestro clients and maestrod"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+maestro-domain = { path = "../maestro-domain" }
+rmp-serde.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

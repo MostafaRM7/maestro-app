@@ -1,0 +1,42 @@
+[package]
+name = "maestrod"
+description = "Per-user background daemon for Maestro"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+chacha20poly1305.workspace = true
+dirs.workspace = true
+hex.workspace = true
+maestro-adapter = { path = "../maestro-adapter" }
+maestro-domain = { path = "../maestro-domain" }
+maestro-process = { path = "../maestro-process" }
+maestro-project = { path = "../maestro-project" }
+maestro-protocol = { path = "../maestro-protocol" }
+maestro-redaction = { path = "../maestro-redaction" }
+maestro-storage = { path = "../maestro-storage" }
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "maestrod"
+path = "src/main.rs"

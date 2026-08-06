@@ -1,0 +1,61 @@
+# Rust build output (Cargo.lock is intentionally committed for this application)
+/target/
+**/*.rs.bk
+
+# JavaScript dependencies and generated output
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# Tauri bundles and generated platform artifacts
+apps/desktop/src-tauri/binaries/maestrod-*
+apps/desktop/src-tauri/binaries/maestro-fake-agent-*
+*.AppImage
+*.AppImage.zsync
+*.deb
+*.dmg
+*.app.tar.gz
+
+# Local runtime state (SQL migration sources remain tracked)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.log
+logs/
+crash-reports/
+support-bundles/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.p12
+*.mobileprovision
+*.provisionprofile
+.tauri-signing-private-key
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test and tooling caches
+.cache/
+.eslintcache
+.nyc_output/
+.cargo-deny/
+
+# Keep the application lockfiles under version control.
+!Cargo.lock
+!pnpm-lock.yaml

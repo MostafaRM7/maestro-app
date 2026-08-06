@@ -1,0 +1,64 @@
+[workspace]
+members = [
+  "apps/desktop/src-tauri",
+  "crates/maestro-adapter",
+  "crates/maestro-domain",
+  "crates/maestro-process",
+  "crates/maestro-project",
+  "crates/maestro-protocol",
+  "crates/maestro-redaction",
+  "crates/maestro-storage",
+  "crates/maestrod",
+  "fixtures/fake-agent",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+license = "MIT"
+repository = "https://github.com/maestro-app/maestro-app"
+authors = ["Maestro contributors"]
+
+[workspace.dependencies]
+anyhow = "1.0.100"
+argon2 = "0.5.3"
+async-trait = "0.1.89"
+base64 = "0.22.1"
+bytes = "1.10.1"
+chacha20poly1305 = "0.10.1"
+chrono = { version = "0.4.42", features = ["serde"] }
+dirs = "6.0.0"
+futures-util = "0.3.31"
+hex = "0.4.3"
+ignore = "0.4.33"
+keyring = "4.1.6"
+portable-pty = "0.9.0"
+rand = "0.9.2"
+regex = "1.13.1"
+rmp-serde = "1.3.1"
+rusqlite = { version = "0.40.1", default-features = false, features = ["backup", "bundled-sqlcipher-vendored-openssl", "chrono", "uuid"] }
+rustix = { version = "1.1.4", default-features = false, features = ["fs"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+tauri = { version = "2.11.5", features = ["tray-icon"] }
+tempfile = "3.23.0"
+thiserror = "2.0.17"
+tokio = { version = "1.53.1", features = ["fs", "io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "json"] }
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+url = "2.5.7"
+zeroize = { version = "1.8.2", features = ["derive"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"

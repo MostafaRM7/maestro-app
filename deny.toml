@@ -1,0 +1,52 @@
+# Maestro ships a desktop application, so all build and runtime dependencies are
+# evaluated. Unknown licenses and unapproved dependency sources fail CI.
+
+[graph]
+all-features = true
+
+[advisories]
+yanked = "deny"
+unmaintained = "workspace"
+unsound = "workspace"
+unused-ignored-advisory = "deny"
+
+[licenses]
+confidence-threshold = 0.93
+include-dev = true
+include-build = true
+unused-allowed-license = "allow"
+unused-license-exception = "deny"
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "MIT-0",
+    "OpenSSL",
+    "Unicode-3.0",
+    # Kept for older Unicode crates while Maestro's supported dependency range
+    # still contains the legacy SPDX identifier.
+    "Unicode-DFS-2016",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+allow-wildcard-paths = true
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = [
+    "https://github.com/rust-lang/crates.io-index",
+    "sparse+https://index.crates.io/",
+]
