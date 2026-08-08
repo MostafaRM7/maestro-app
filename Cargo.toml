@@ -20,6 +20,10 @@ rust-version = "1.97.1"
 license = "MIT"
 repository = "https://github.com/maestro-app/maestro-app"
 authors = ["Maestro contributors"]
+# Maestro's desktop app, daemon, internal libraries, and fixtures are not
+# crates.io publication units. Publishing is disabled for the entire workspace
+# so cargo-deny's wildcards policy can exempt path dependencies.
+publish = false
 
 [workspace.dependencies]
 anyhow = "1.0.100"

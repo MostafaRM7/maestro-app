@@ -7,6 +7,9 @@ rust-version = "1.97.1"
 license = "MIT"
 repository = "https://github.com/maestro-app/maestro-app"
 authors = ["Maestro contributors"]
+# This manifest declares package fields directly rather than through workspace
+# inheritance; `publish` itself is inherited per-field from [workspace.package].
+publish.workspace = true
 
 [dependencies]
 serde_json.workspace = true

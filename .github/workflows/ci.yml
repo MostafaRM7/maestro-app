@@ -274,6 +274,9 @@ jobs:
             HOME="$HOME" \
             PATH="$PATH" \
             MAESTRO_HOST_NET_NAMESPACE="$host_net_namespace" \
+            CI=true \
+            PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false \
+            PNPM_CONFIG_OFFLINE=true \
             unshare --net --mount-proc \
             /usr/bin/setpriv \
             --reuid="$runner_uid" \
