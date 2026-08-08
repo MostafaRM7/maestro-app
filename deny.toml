@@ -29,6 +29,12 @@ allow = [
     "MIT-0",
     "OpenSSL",
     "Unicode-3.0",
+    # MPL-2.0 is an OSI-approved, file-level copyleft license. It is required
+    # by the cssparser, cssparser-macros, dtoa-short, and selectors crates,
+    # which arrive through Tauri's dom_query/webview dependency stack.
+    # option-ext arrives through dirs v6, which is used directly by maestrod
+    # and transitively by Tauri.
+    "MPL-2.0",
     # Kept for older Unicode crates while Maestro's supported dependency range
     # still contains the legacy SPDX identifier.
     "Unicode-DFS-2016",

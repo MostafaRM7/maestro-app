@@ -216,12 +216,35 @@ jobs:
       - name: Compile Rust tests before isolation
         run: cargo test --locked --workspace --all-features --no-run
 
+      - name: Verify isolation guard rejects an unisolated process
+        run: |
+          host_net_namespace="$(readlink /proc/self/ns/net)"
+          if [[ -z "$host_net_namespace" ]]; then
+            echo "cannot read the current network namespace via /proc/self/ns/net" >&2
+            exit 1
+          fi
+          output="$(MAESTRO_HOST_NET_NAMESPACE="$host_net_namespace" bash scripts/run-without-network.sh true 2>&1)" || status=$?
+          if [[ "${status:-0}" -ne 65 ]]; then
+            echo "expected the isolation guard to refuse with exit 65, got ${status:-0}" >&2
+            exit 1
+          fi
+          if [[ "$output" != *"not in a distinct network namespace"* ]]; then
+            echo "expected a distinct-network-namespace refusal message, got: $output" >&2
+            exit 1
+          fi
+          echo "isolation guard correctly refused an unisolated process: $output"
+
       - name: Run Rust tests in a network namespace with no routes
         env:
           MAESTRO_FAKE_AGENT: ${{ github.workspace }}/target/debug/maestro-fake-agent
         run: |
           runner_uid="$(id -u)"
           runner_gid="$(id -g)"
+          host_net_namespace="$(readlink /proc/self/ns/net)"
+          if [[ -z "$host_net_namespace" ]]; then
+            echo "cannot read the current network namespace via /proc/self/ns/net" >&2
+            exit 1
+          fi
           sudo \
             HOME="$HOME" \
             CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}" \
@@ -229,6 +252,7 @@ jobs:
             PATH="$PATH" \
             CARGO_NET_OFFLINE=true \
             MAESTRO_FAKE_AGENT="$MAESTRO_FAKE_AGENT" \
+            MAESTRO_HOST_NET_NAMESPACE="$host_net_namespace" \
             unshare --net --mount-proc \
             /usr/bin/setpriv \
             --reuid="$runner_uid" \
@@ -241,9 +265,15 @@ jobs:
         run: |
           runner_uid="$(id -u)"
           runner_gid="$(id -g)"
+          host_net_namespace="$(readlink /proc/self/ns/net)"
+          if [[ -z "$host_net_namespace" ]]; then
+            echo "cannot read the current network namespace via /proc/self/ns/net" >&2
+            exit 1
+          fi
           sudo \
             HOME="$HOME" \
             PATH="$PATH" \
+            MAESTRO_HOST_NET_NAMESPACE="$host_net_namespace" \
             unshare --net --mount-proc \
             /usr/bin/setpriv \
             --reuid="$runner_uid" \
@@ -270,7 +300,7 @@ jobs:
           license-check: true
           allow-licenses: >-
             0BSD, Apache-2.0, BSD-2-Clause, BSD-3-Clause, BSL-1.0,
-            CC0-1.0, ISC, MIT, MIT-0, OpenSSL, Unicode-3.0,
+            CC0-1.0, ISC, MIT, MIT-0, MPL-2.0, OpenSSL, Unicode-3.0,
             Unicode-DFS-2016, Zlib
 
   native-check:
