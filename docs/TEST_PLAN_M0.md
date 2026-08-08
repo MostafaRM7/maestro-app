@@ -33,11 +33,23 @@ evidence:
 - a five-second non-gating idle-daemon sampler smoke recorded 9.34 MiB maximum
   RSS and 0% sampled CPU.
 
+On 2026-08-08, the same automated Foundation matrix passed locally on Linux
+x86_64: Zorin OS 18.1 with an Ubuntu Noble base, glibc 2.39, GNOME Wayland. The
+run covered Rust formatting and strict Clippy, 213 Rust tests with two explicit
+helpers ignored, 116 frontend tests, TypeScript, ESLint, production web build,
+provider/IPC boundary scan, JavaScript dependency audit, native compilation,
+and AppImage/`.deb` packaging. An isolated AppImage startup remained running
+after Secret Service activation timed out, created an owner-only Unix socket,
+opened no Maestro Internet socket, and exited cleanly. This is useful
+Noble/Wayland evidence, and the Ubuntu-family host is accepted as the Milestone
+0 Ubuntu desktop environment. It is not a pass for the Ubuntu 22.04 glibc
+baseline or the full interactive `MAN-LNX-*` checklists.
+
 The short resource smoke verifies the sampler, not the `PERF-*` thresholds.
 GitHub target-matrix results, the route-free Linux CI run, launched-webview
 flows, full-duration resource measurements, secure-store behavior, menu/tray,
-Wayland/X11, and other manual cases remain open until their artifacts are
-recorded. Detailed commands, limitations, and evidence handling are in
+Wayland, and other manual cases remain open until their artifacts are recorded.
+Detailed commands, limitations, and evidence handling are in
 [`M0_SECURITY_PERFORMANCE_EVIDENCE.md`](M0_SECURITY_PERFORMANCE_EVIDENCE.md).
 
 ## 2. Quality gates and severity
@@ -66,7 +78,7 @@ issue and the associated gate remains unsatisfied.
    and fake child executables communicate as real processes.
 5. **End to end** — user-visible workflows and window/process lifecycle.
 6. **Manual platform** — native window, tray/menu, terminal behavior, visual
-   theme, Wayland/X11, launch, and OS secure-store checks.
+   theme, Wayland, launch, and OS secure-store checks.
 7. **Performance/security** — separately recorded release-build gates with raw
    evidence retained as CI artifacts.
 
@@ -75,9 +87,10 @@ issue and the associated gate remains unsatisfied.
 | Environment | Automated responsibility | Manual responsibility |
 |---|---|---|
 | macOS 13+ ARM64 | Full unit/component/contract/integration suite; primary production build; performance | Keychain, menu bar, multi-window, terminal/TUI, native appearance, launch/resource gates |
-| macOS 13+ x86_64 | Full unit/component/contract suite; production build; architecture smoke | Keychain, multi-window, terminal/TUI, launch/resource smoke |
-| Ubuntu 22.04 x86_64 Wayland | Full Linux suite; AppImage/deb build viability when introduced | Secret Service and unavailable-service fallback, tray, terminal/TUI, scaling, file/Git, resource gates |
-| Ubuntu 22.04 x86_64 X11 | Linux suite may be shared with Wayland where display-independent | Tray, terminal mouse, scaling, multi-window, file/Git, lock-independent M0 behavior |
+| Ubuntu-family 22.04+ x86_64 Wayland | Full Linux suite; AppImage/deb build viability when introduced | Secret Service and unavailable-service fallback, tray, terminal/TUI, scaling, file/Git, resource gates |
+
+Ubuntu X11 desktop parity is deferred to Milestone 4 as `M4-LNX-X11-001` and
+does not block Milestone 0 exit.
 
 CI uses clean temporary `HOME`-equivalent fixture roots and temporary runtime
 directories. It must never point fake tests at the user's real CLI config,
@@ -323,7 +336,6 @@ links. Use only local fixtures and disposable repositories.
 | MAN-MAC-001 | P0 | On macOS 13+ ARM64, first launch creates/uses the expected `com.maestroai.app` Keychain item; relaunch unlocks without exposing key material. |
 | MAN-MAC-002 | P1 | Menu-bar session count/actions reflect window closure and background fake/shell sessions; reopening restores windows without stopping children. |
 | MAN-MAC-003 | P1 | Multi-window focus, native menus, keyboard shortcuts, system theme, Retina scaling, and external-editor opening behave consistently. |
-| MAN-MAC-004 | P1 | Repeat architecture smoke on macOS 13+ x86_64: launch, unlock, project, shell/TUI, background/reopen, clean quit. |
 
 ### Ubuntu-specific
 
@@ -332,8 +344,10 @@ links. Use only local fixtures and disposable repositories.
 | MAN-LNX-001 | P0 | With Secret Service available, first launch stores key there and relaunch succeeds without plaintext fallback. |
 | MAN-LNX-002 | P0 | With Secret Service unavailable in a clean profile, app remains open at passphrase setup/unlock, creates only encrypted data after input, rejects wrong passphrase, and unlocks with correct passphrase. |
 | MAN-LNX-003 | P1 | Under Wayland, validate tray visibility/control, multi-window, theme/scaling, clipboard policy, terminal resize/mouse, and external editor. |
-| MAN-LNX-004 | P1 | Repeat the same desktop validation under X11 and compare documented platform-specific limitations. |
 | MAN-LNX-005 | P1 | Launch/build smoke on Ubuntu 22.04 x86_64 verifies no dependency on a newer glibc baseline. |
+
+The former `MAN-LNX-004` X11 case is now `M4-LNX-X11-001` and is outside the
+Milestone 0 required matrix.
 
 ## 10. Performance gates
 
@@ -411,7 +425,7 @@ SHA with:
 - fake CLI contract and 10-session integration transcripts;
 - PTY golden comparisons;
 - frontend keyboard/security tests;
-- macOS ARM64 and x86_64 plus Ubuntu 22.04 x86_64 production-build evidence;
+- macOS ARM64 and Ubuntu 22.04 x86_64 production-build evidence;
 - manual platform checklists;
 - performance raw samples and summary;
 - security review with disposition of every finding;

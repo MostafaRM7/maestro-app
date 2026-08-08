@@ -1,11 +1,11 @@
 # Maestro Milestone 0 — Foundation
 
 Status: Implementation closure candidate — local automated gates green;
-cross-platform and manual gates remain open (2026-08-05)  
+cross-platform and manual gates remain open (2026-08-08)<br>
 Product: Maestro (`com.maestroai.app`)  
 Source of truth: [`../MAESTRO_ARCHITECTURE.md`](../MAESTRO_ARCHITECTURE.md)  
-Target platforms: macOS 13+ (ARM64 and x86_64), Ubuntu 22.04+ (x86_64,
-Wayland and X11)
+Target platforms: macOS 13+ ARM64, Ubuntu 22.04+ x86_64 on Wayland; X11
+validation is deferred to Milestone 4
 
 ## 1. Outcome
 
@@ -31,6 +31,19 @@ executable, 116 frontend tests, TypeScript checking, ESLint, production web
 build, Tauri debug and optimized desktop builds, an unsigned macOS ARM64 `.app`
 bundle containing both required sidecars, the provider/IPC boundary scan, and
 the JavaScript dependency audit.
+
+On 2026-08-08, local Linux x86_64 validation on Zorin OS 18.1 (Ubuntu Noble
+base), GNOME Wayland, also passed Rust formatting, strict workspace Clippy, 213
+Rust tests with two explicit helpers ignored, 116 frontend tests, TypeScript,
+ESLint, the production web build, the provider/IPC boundary scan, the
+JavaScript dependency audit, native compilation, and AppImage/`.deb`
+packaging. The isolated packaged-AppImage startup created an owner-only
+authenticated Unix socket, reached one stable daemon, opened no Maestro
+Internet socket, and shut down without leaving Maestro processes. This local
+Ubuntu-family Wayland host is accepted as the Milestone 0 Ubuntu desktop
+environment. Its Noble/glibc 2.39 build does not replace the Ubuntu 22.04
+minimum-glibc CI gate or the complete interactive Secret Service/passphrase and
+desktop workflow checklists.
 
 Deterministic CI now has a Linux network-namespace job that compiles before
 isolation and runs the Rust and frontend suites with no outbound route. The
@@ -61,7 +74,7 @@ adapter work.
   test support.
 - React/TypeScript/Vite frontend hosted by Tauri 2.
 - Reproducible development commands and pinned dependency/toolchain policy.
-- CI for macOS ARM64, macOS x86_64, and Ubuntu 22.04 x86_64. Jobs may use
+- CI for macOS ARM64 and Ubuntu 22.04 x86_64. Jobs may use
   platform-appropriate native runners; Linux artifacts must be built on Ubuntu
   22.04.
 - Formatting, linting, type checking, unit tests, dependency/license checks,
@@ -202,6 +215,8 @@ The following are not acceptance requirements for Milestone 0:
 - LSP, IntelliSense, debugging, refactoring, semantic indexing, advanced Git,
   or conflict resolution.
 - Ubuntu ARM64, Windows, web, and mobile.
+- Ubuntu X11 desktop parity and platform-limitation validation; this is moved to
+  `M4-LNX-X11-001` in Milestone 4.
 - Screen-reader-specific optimization and reduced-motion support.
 - Opt-in live tests that consume vendor resources. Those begin with their
   corresponding adapter milestone.
@@ -361,8 +376,7 @@ Acceptance:
    and UI scaling does not make controls unreachable at supported test sizes.
 4. Disabled later-milestone capabilities remain visibly disabled with a reason,
    rather than silently disappearing or executing a placeholder.
-5. macOS ARM64, macOS x86_64, Ubuntu Wayland, and Ubuntu X11 validation produce
-   recorded evidence.
+5. macOS ARM64 and Ubuntu Wayland validation produce recorded evidence.
 
 Evidence: `UI-*`, `MAN-UI-001`, `MAN-MAC-*`, and `MAN-LNX-*`.
 
@@ -421,7 +435,7 @@ Milestone 0 exits only when all of the following are true:
   either fixed or returned for explicit design review; it is not relabeled as a
   pass.
 - User-facing Foundation behavior and known limitations are documented.
-- CI is green for macOS ARM64, macOS x86_64, and Ubuntu 22.04 x86_64 build/test
+- CI is green for macOS ARM64 and Ubuntu 22.04 x86_64 build/test
   responsibilities.
 - There are no unresolved release-blocking defects and no flaky release gate.
 

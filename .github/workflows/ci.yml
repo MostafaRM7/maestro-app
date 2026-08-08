@@ -58,10 +58,21 @@ jobs:
           rustup show active-toolchain
           rustc --version --verbose
 
+      - name: Install Node.js for sidecar staging
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
       - name: Restore Rust build cache
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
           shared-key: ubuntu-rust-quality
+
+      - name: Stage matching Foundation sidecars
+        env:
+          TAURI_ENV_TARGET_TRIPLE: x86_64-unknown-linux-gnu
+        run: node scripts/stage-sidecar.mjs --debug
 
       - name: Check formatting
         run: cargo fmt --all --check
@@ -194,6 +205,11 @@ jobs:
         with:
           shared-key: ubuntu-network-denied
 
+      - name: Stage matching Foundation sidecars
+        env:
+          TAURI_ENV_TARGET_TRIPLE: x86_64-unknown-linux-gnu
+        run: node scripts/stage-sidecar.mjs --debug
+
       - name: Build deterministic fake agent
         run: cargo build --locked -p maestro-fake-agent
 
@@ -268,9 +284,6 @@ jobs:
           - label: macOS ARM64
             runner: macos-15
             target: aarch64-apple-darwin
-          - label: macOS x86_64
-            runner: macos-15-intel
-            target: x86_64-apple-darwin
           - label: Ubuntu 22.04 x86_64
             runner: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -279,6 +292,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
+      - name: Install Node.js for sidecar staging
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
 
       - name: Install Linux build prerequisites
         if: runner.os == 'Linux'
@@ -306,6 +325,11 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
+      - name: Stage matching Foundation sidecars
+        env:
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.target }}
+        run: node scripts/stage-sidecar.mjs --debug
+
       - name: Check native workspace
         run: cargo check --locked --workspace --all-targets --all-features --target "${{ matrix.target }}"
 
@@ -331,11 +355,6 @@ jobs:
             artifact: maestro-macos-arm64-unsigned
             runner: macos-15
             target: aarch64-apple-darwin
-            bundles: dmg
-          - label: macOS x86_64
-            artifact: maestro-macos-x86_64-unsigned
-            runner: macos-15-intel
-            target: x86_64-apple-darwin
             bundles: dmg
           - label: Ubuntu 22.04 x86_64
             artifact: maestro-ubuntu-x86_64-unsigned

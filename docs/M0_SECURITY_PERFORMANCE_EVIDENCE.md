@@ -2,7 +2,7 @@
 
 Status: automated boundary checks implemented; release-candidate runtime and
 performance measurements remain open  
-Audit date: 2026-08-06
+Audit date: 2026-08-08
 
 This record covers the provider/network boundary, daemon transport, and
 resource targets for the Foundation milestone. It distinguishes repeatable
@@ -168,13 +168,92 @@ After the user approved the native Keychain prompt, a metadata-only
 or printed. This is useful local `MAN-MAC-001` evidence, but the complete
 release-candidate first-launch/relaunch checklist still remains open.
 
+## Ubuntu x86_64 package and accepted Wayland smoke
+
+On 2026-08-08, the Foundation matrix ran locally on an x86_64 Zorin OS 18.1
+host (`ID_LIKE="ubuntu debian"`, Ubuntu codename Noble), GNOME Wayland, and
+glibc 2.39. By product decision, this Ubuntu-family host is accepted as the
+Milestone 0 Ubuntu Wayland environment. The following checks passed:
+
+- Rust formatting and strict workspace Clippy;
+- 213 Rust tests, with two explicit subprocess helpers intentionally ignored;
+- 116 frontend tests, TypeScript checking, ESLint, and production web build;
+- native `x86_64-unknown-linux-gnu` compilation;
+- the provider/IPC boundary scan and `pnpm audit --audit-level high`; and
+- optimized AppImage and `.deb` packaging with both Foundation sidecars.
+
+The generated packages were:
+
+```text
+target/x86_64-unknown-linux-gnu/release/bundle/appimage/Maestro_0.1.0_amd64.AppImage
+  SHA-256 7ba62dbafe3853b0d8cf9892cacf0d3722a246cefa50e2b3da91b430dc18a2c9
+target/x86_64-unknown-linux-gnu/release/bundle/deb/Maestro_0.1.0_amd64.deb
+  SHA-256 29789e6623fb74e7d8f34690b540dd72cd38bb36eb85c8faaef3a34b25d6e38c
+```
+
+The Debian metadata reports `Architecture: amd64`. Package inspection found
+`maestro-desktop`, `maestrod`, and `maestro-fake-agent` in both formats, and all
+three are x86-64 ELF executables. Because the packages were built on Noble,
+their binaries require symbols available through glibc 2.39; they do not prove
+the Ubuntu 22.04 minimum baseline. The Ubuntu 22.04 native packaging job remains
+the authoritative compatibility gate.
+
+The AppImage also copied the unrelated host multiarch module
+`usr/lib/i386-linux-gnu/gio/modules/libgiognutls.so`. The three Maestro
+executables are x86_64, but this 32-bit host contamination must be removed or
+explicitly dispositioned before treating the AppImage as a release candidate.
+
+For the runtime smoke, the AppImage was launched on the real Wayland display
+with isolated temporary XDG data/config/cache/runtime roots and an isolated
+D-Bus session. Secret Service activation on that new bus timed out, exercising
+the unavailable-service startup path. The desktop and WebKit helpers remained
+alive, and startup eventually converged to one `maestrod`. The runtime created
+an authentication token and `maestrod.sock`, both mode `0600`, under the
+isolated runtime root. No application database was created before interactive
+passphrase setup. `lsof` showed no Internet socket for the desktop or daemon,
+and the host TCP/UDP listener capture attributed no listener to a Maestro
+process. Interrupting the isolated launch exited the desktop, daemon, WebKit,
+and D-Bus process tree without leaving a `maestro-desktop` or `maestrod`
+process.
+
+Several daemon attempts occurred while Secret Service activation was timing
+out before one daemon remained stable. The isolated launch did not complete
+interactive passphrase creation/relaunch, so this observation is not a
+`MAN-LNX-002` pass and must be repeated with a release candidate. The full
+Wayland desktop workflow (`MAN-LNX-003`), Secret Service available path
+(`MAN-LNX-001`), and Ubuntu 22.04 launch/build smoke (`MAN-LNX-005`) remain
+open. X11 desktop parity is deferred to `M4-LNX-X11-001` and no longer blocks
+Milestone 0.
+
+## Remaining Milestone 0 gates after the platform decision
+
+- Record a green candidate-SHA GitHub Actions run for macOS ARM64 and Ubuntu
+  22.04 x86_64, including the route-free deterministic suites and dependency,
+  advisory, and license policy jobs.
+- Complete the Ubuntu Wayland manual checklist: Secret Service available
+  first-launch/relaunch, unavailable-service passphrase create/wrong/unlock/
+  relaunch, tray and multi-window lifecycle, theme/scaling, clipboard and
+  terminal input, file/Git/external-editor workflows, redaction, and a full
+  runtime socket capture. The Ubuntu 22.04 CI package must also prove the
+  minimum glibc baseline.
+- Complete the corresponding packaged macOS ARM64 common workflows and retain
+  the full Keychain, menu-bar, terminal/TUI, multi-window, lifecycle, redaction,
+  and runtime-network evidence.
+- Run the defined three-run performance matrix: startup p95, daemon/GUI RSS,
+  idle CPU, ten-session concurrency, flood responsiveness, lifecycle leak,
+  retention, and the approximately 100,000-file repository workload.
+- Resolve or disposition the 32-bit GIO module copied into the AppImage and the
+  repeated daemon attempts observed during isolated Secret Service timeout;
+  then finish the full security review with no unresolved critical/high issue,
+  release blocker, or flaky required gate.
+
 ## Evidence matrix and open gates
 
 | Gate | Current automated evidence | Remaining release evidence |
 |---|---|---|
 | NET-001 provider boundary | Source/manifest/lock scan is local-pass and CI-gated | Review scan rule updates whenever supported vendors or dependency formats change |
 | NET-002 no-network tests | Route-free namespace job is defined for Rust and frontend suites | Link a green candidate-SHA CI run |
-| NET-003 local IPC only | Unix socket tests/source guard plus one optimized macOS ARM64 startup capture with no daemon Internet socket | Capture packaged common workflows on macOS ARM64, macOS x86_64, and Ubuntu x86_64 |
+| NET-003 local IPC only | Unix socket tests/source guard, one optimized macOS ARM64 startup capture, and one isolated Ubuntu-family Wayland startup capture; neither desktop nor daemon opened an Internet socket | Capture complete packaged common workflows on macOS ARM64 and Ubuntu x86_64 |
 | PERF-DAEMON-001 | One five-minute optimized idle run: 15.34 MiB max RSS, 0% average CPU | Three release normal-workload runs and worst-case result against ~50 MiB daemon target |
 | PERF-GUI-001 / PERF-IDLE-001 | One five-minute optimized idle run: 203.16 MiB max RSS, 0.14% average CPU, no sustained >2% interval | Three defined normal-workload runs against ~250 MiB GUI and idle-CPU targets |
 | PERF-START-001 | None | Ten cold candidate launches per reference target; record input-ready p95 |

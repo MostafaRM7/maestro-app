@@ -4,7 +4,7 @@ Status: Approved; implementation in progress
 Repository: maestro-app  
 Application identifier: com.maestroai.app  
 License: MIT  
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 ## 1. Product definition
 
@@ -29,8 +29,7 @@ A single developer working locally across multiple projects and agent sessions.
 Release priority:
 
 1. macOS 13+ ARM64
-2. macOS 13+ x86_64
-3. Ubuntu 22.04+ x86_64, on Wayland and X11
+2. Ubuntu 22.04+ x86_64 (Wayland in Foundation; X11 validation in Milestone 4)
 
 Ubuntu ARM64, Windows, mobile, and web are not in the initial scope.
 
@@ -910,12 +909,10 @@ Transfer creates a new prompt through the destination CLI.
 | Priority | Target | Package |
 |---|---|---|
 | 1 | macOS 13+ ARM64 | Signed and notarized DMG |
-| 2 | macOS 13+ x86_64 | Signed and notarized DMG |
-| 3 | Ubuntu 22.04+ x86_64 | AppImage and .deb |
+| 2 | Ubuntu 22.04+ x86_64 | AppImage and .deb |
 
-Use separate macOS architecture artifacts initially. A universal DMG can be
-evaluated later, but separate builds simplify native dependencies, diagnostics,
-and updater targeting.
+Publish target-specific artifacts so native dependencies, diagnostics, and
+updater selection remain explicit.
 
 References:
 
@@ -925,7 +922,6 @@ References:
 ### GitHub Actions matrix
 
 - macOS ARM64 native runner
-- macOS Intel native runner
 - Ubuntu 22.04 x86_64 runner
 - Separate test, package, sign, notarize, and publish jobs
 - Build Linux artifacts on Ubuntu 22.04 to preserve the minimum glibc baseline
@@ -981,7 +977,7 @@ Required on every pull request:
 
 Release validation:
 
-- All three native target builds
+- Both native target builds
 - Signed updater verification
 - macOS notarization
 - Installation/upgrade smoke tests
@@ -1081,8 +1077,6 @@ These are technical validations, not unresolved product choices:
 4. Reliable PTY permission detection across terminal sizes.
 5. Linux locked-screen detection under Wayland and X11.
 6. SQLCipher/Secret Service behavior when the desktop keyring is unavailable.
-7. macOS Intel packaging and runtime validation from the ARM-first development
-   environment.
 
 If a spike disproves a required behavior, implementation must return to design
 review rather than silently weakening the requirement.
@@ -1104,7 +1098,9 @@ Scope:
 - Multi-window UI shell, tray/menu bar, and themes
 - Project/workspace model
 - Basic file browsing, editing, search, diff, and Git inspection
-- Initial CI across the three release targets
+- Initial CI across both release targets
+- Ubuntu desktop acceptance on GNOME Wayland; X11 desktop validation is
+  deferred to Milestone 4
 
 Acceptance:
 
@@ -1195,6 +1191,8 @@ Scope:
 - Notifications and secure quick actions
 - Stable/beta updater
 - macOS and Ubuntu packaging
+- Ubuntu X11 desktop parity for tray, multi-window, scaling, terminal input,
+  and external-editor workflows
 - First-release keyboard, scaling, contrast, and theme hardening
 
 Acceptance:
@@ -1204,6 +1202,7 @@ Acceptance:
 - Selective and full exports round-trip
 - Signed update validation works on all release targets
 - Packaging installs and upgrades cleanly
+- The `M4-LNX-X11-001` desktop-parity checklist passes on Ubuntu X11
 - Resource targets pass
 
 ### Milestone 5 — Release candidate
@@ -1234,7 +1233,6 @@ Production-readiness evidence:
 - Public external-adapter protocol and SDK
 - Screen-reader-specific optimization
 - Reduced-motion support
-- Optional universal macOS DMG
 - Additional agent CLIs
 - Windows, only if later requested
 

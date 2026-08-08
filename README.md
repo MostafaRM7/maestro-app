@@ -11,8 +11,7 @@ design is in [MAESTRO_ARCHITECTURE.md](MAESTRO_ARCHITECTURE.md).
 ## Initial targets
 
 - macOS 13+ on Apple Silicon
-- macOS 13+ on Intel
-- Ubuntu 22.04+ on x86_64 (Wayland and X11)
+- Ubuntu 22.04+ on x86_64 (Wayland in Foundation; X11 validation in Milestone 4)
 
 ## Repository layout
 

@@ -2,7 +2,8 @@
 
 Status: Approved Milestone 0 implementation specification  
 Product: Maestro (`com.maestroai.app`)  
-Platforms: macOS 13+ ARM64/x86_64; Ubuntu 22.04+ x86_64 (Wayland and X11)  
+Platforms: macOS 13+ ARM64; Ubuntu 22.04+ x86_64 Wayland for Milestone 0;
+X11 validation in Milestone 4<br>
 Related design: [`../MAESTRO_ARCHITECTURE.md`](../MAESTRO_ARCHITECTURE.md)
 
 ## 1. Purpose and scope
@@ -727,8 +728,9 @@ enabled state, support level, explanation, maturity, and fallback action.
 These are validation risks, not product decisions to fill in silently:
 
 1. **Tauri native title-bar consistency.** Traffic-light safe-area behavior and
-   draggable-region accessibility must be tested on both macOS architectures;
-   native Linux decoration must be verified on GNOME Wayland and X11.
+   draggable-region accessibility must be tested on macOS ARM64;
+   native Linux decoration must be verified on GNOME Wayland in Milestone 0 and
+   on X11 under `M4-LNX-X11-001`.
 2. **Cross-window tab movement.** Tauri webviews cannot be reparented as ordinary
    DOM nodes. The implementation should serialize view state and reconnect to
    the daemon stream by last acknowledged sequence, then measure visible handoff
@@ -751,4 +753,3 @@ These are validation risks, not product decisions to fill in silently:
 8. **Webview resource ceiling.** Multiple native windows each carry a webview.
    The 250 MB normal-use GUI target needs measurements with at least two project
    windows before committing to always-live hidden views.
-

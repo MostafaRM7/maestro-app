@@ -2,7 +2,7 @@
 
 Maestro is a Tauri 2 desktop application with a Rust workspace and a
 pnpm-managed TypeScript workspace. The application targets macOS 13+ on ARM64
-and Intel, plus Ubuntu 22.04 x86_64. Ubuntu ARM64 is not a release target.
+and Ubuntu 22.04 x86_64. Ubuntu ARM64 is not a release target.
 
 This guide covers the Foundation toolchain and validation workflow. It does not
 configure signing, notarization, publishing, or vendor CLI credentials.
@@ -34,9 +34,7 @@ Install:
 - pnpm through Corepack, using the version declared in `package.json`
 - `pkg-config` and SQLCipher development libraries
 
-Both Apple Silicon and Intel builds are native CI jobs. Cross-compiling an Intel
-artifact on an Apple Silicon development machine is not a substitute for the
-native Intel CI result.
+The macOS release target is Apple Silicon and is validated by a native CI job.
 
 ### Ubuntu 22.04 x86_64
 
@@ -63,8 +61,9 @@ version with Corepack. Follow the official installation instructions for these
 tools rather than piping unreviewed third-party installation scripts into a
 shell.
 
-Ubuntu validation must cover both Wayland and X11 before a release. The ordinary
-headless checks in CI do not replace those desktop smoke tests.
+Milestone 0 desktop validation uses GNOME Wayland. X11 desktop parity is
+deferred to Milestone 4 and remains required before the first release. Ordinary
+headless checks in CI do not replace the applicable desktop smoke tests.
 
 ## Bootstrap
 
@@ -131,12 +130,11 @@ Local unsigned smoke packages can be produced with:
 
 ```sh
 pnpm tauri build --target aarch64-apple-darwin --bundles dmg
-pnpm tauri build --target x86_64-apple-darwin --bundles dmg
 pnpm tauri build --target x86_64-unknown-linux-gnu --bundles appimage,deb
 ```
 
 Only run the command matching the native host architecture. GitHub Actions also
-exposes a manual `package_native` workflow input that builds all three unsigned
+exposes a manual `package_native` workflow input that builds both unsigned
 targets. Those artifacts are retained for seven days for engineering smoke
 tests and are not release artifacts.
 
@@ -151,8 +149,8 @@ human approval.
 - `frontend-quality`: lint, type checking, tests, and production web build.
 - `dependency-policy`: Cargo advisory/license/source policy and pnpm audit.
 - `dependency-review`: reviews dependency changes on pull requests.
-- `native-check`: native Rust compilation and tests on macOS ARM64, macOS
-  Intel, and Ubuntu 22.04 x86_64.
+- `native-check`: native Rust compilation and tests on macOS ARM64 and Ubuntu
+  22.04 x86_64.
 - `package-native`: manual-only unsigned DMG, AppImage, and `.deb` smoke builds.
 
 CI receives a read-only `GITHUB_TOKEN`, checkout does not persist credentials,
