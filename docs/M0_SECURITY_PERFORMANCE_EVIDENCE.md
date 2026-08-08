@@ -70,9 +70,9 @@ fresh Linux network namespace:
 
 Dependency acquisition is intentionally outside the network-denied phase. The
 test execution itself cannot make an outbound provider or other network call.
-The first GitHub Actions result for the candidate commit must be linked here
-before the milestone is signed off; the workflow definition alone is not a
-recorded pass.
+The first GitHub Actions result for the candidate commit is recorded in the
+"Ubuntu 22.04 CI build and package evidence" section below; the workflow
+definition alone is not a recorded pass.
 
 ## Runtime socket evidence still required
 
@@ -225,34 +225,115 @@ Wayland desktop workflow (`MAN-LNX-003`), Secret Service available path
 open. X11 desktop parity is deferred to `M4-LNX-X11-001` and no longer blocks
 Milestone 0.
 
+## Ubuntu 22.04 CI build and package evidence
+
+Candidate commit `0950275c329d2ddf0d8f33ae4b529e8ff9a36206` produced two green
+GitHub Actions runs.
+
+The push run
+(https://github.com/MostafaRM7/maestro-app/actions/runs/31255203107) passed
+`Rust quality`, `Frontend quality`, `Dependency and license policy`,
+`Deterministic tests without network` (route-free namespaces), `Native test
+(macOS ARM64)`, and `Native test (Ubuntu 22.04 x86_64)`. The PR-only `Pull
+request dependency review` job and the workflow-dispatch-only `Unsigned
+package` matrix job were skipped as expected for that event type.
+
+The manual package run
+(https://github.com/MostafaRM7/maestro-app/actions/runs/31255743665) was
+dispatched with `package_native=true` at the same commit and passed every
+applicable job, including `Unsigned package (Ubuntu 22.04 x86_64)` and
+`Unsigned package (macOS ARM64)`. Ubuntu packaging ran on the Ubuntu 22.04
+runner, which preserves the minimum glibc baseline.
+
+Downloaded Ubuntu artifact files and SHA-256 hashes:
+
+```text
+maestro-ubuntu-x86_64-unsigned.zip       250227644 bytes 16e969d628e67849d8ca41bd9fb51abcecbc591bb9052078d60503d7bb90af1d
+Maestro_0.1.0_amd64.deb                  15520828  bytes fc8973be4792122e0a7ba1bd296f55e105649b25d39fc1df39a35e528c1394d2
+Maestro_0.1.0_amd64.AppImage             91625976  bytes 940c040916dc6527ab9844988beaf77e972c0bb951d970f2be0f27531487c09e
+```
+
+The macOS ARM64 package job succeeded and its artifact
+`maestro-macos-arm64-unsigned` is listed in the run's artifact API (13,357,569
+bytes). Its content was not downloaded in this phase; macOS download/hash
+inspection is deferred.
+
+The `.deb` control metadata reports `Package: maestro`, `Version: 0.1.0`, and
+`Architecture: amd64`, with `Depends: libwebkit2gtk-4.1-0, libgtk-3-0`. Its
+`usr/bin` ships `maestro-desktop`, `maestrod`, and `maestro-fake-agent`. The
+AppImage outer file is `ELF 64-bit LSB pie executable, x86-64, static-pie
+linked, stripped`; its embedded zstd SquashFS (324 inodes) contains the same
+three executables plus `AppRun`, `AppRun.wrapped`, and `Maestro.desktop`.
+
+All six shipped Maestro executables (three per package format) are `ELF 64-bit`
+x86-64 dynamically linked PIE binaries, each with an identical BuildID across
+both formats:
+
+| Executable | BuildID |
+|---|---|
+| `maestro-desktop` | `dc9b5a5ac79056cfb0eb85296cd4ec7134dadfa0` |
+| `maestrod` | `e68fd1ad1b24ceaa58828f869b862f3ceafbaec2` |
+| `maestro-fake-agent` | `7f33466dae5adf6cd330cc6a7145ea3ee0588810` |
+
+ELF architecture scan across both package trees (3 ELF files in the `.deb`;
+in the AppImage's extracted SquashFS, 172 unique ELF regular files plus 30
+symlink aliases to ELF targets, for 202 dereferenced ELF paths). Symlinks are
+distinct from regular files: the 30 symlink aliases (e.g.
+`usr/lib/libgio-2.0.so`) resolve to regular ELF targets, while non-ELF symlinks
+(`.DirIcon`, `Maestro.desktop`, `maestro-desktop.png`) point at icons/metadata.
+No `ELF 32-bit`, `i386`, or `Intel 80386` file and no `i386-linux-gnu` path
+were found. The 32-bit GIO module contamination seen in the earlier local
+Noble AppImage is absent here; the CI AppImage bundles the x86-64 module
+`usr/lib/x86_64-linux-gnu/gio/modules/libgiognutls.so` instead.
+
+The outer AppImage runtime is itself an `ELF 64-bit LSB pie executable,
+x86-64, static-pie linked, stripped` file. Being static PIE, it carries no
+dynamic symbol version information and therefore has no dynamic GLIBC
+requirement; it is excluded from the GLIBC ceiling table below.
+
+GLIBC symbol-version ceilings measured with `objdump -T` on every shipped ELF
+file:
+
+| Scope | Maximum required GLIBC |
+|---|---|
+| Each of the six Maestro executables | `GLIBC_2.34` |
+| `.deb` package, all shipped ELF | `GLIBC_2.34` |
+| AppImage, all shipped ELF | `GLIBC_2.35` (bundled `libwebkit2gtk-4.1.so.0`) |
+
+The maximum requirement is at or below the Ubuntu 22.04 baseline of
+`GLIBC_2.35`, so the packages do not depend on a newer glibc baseline. This is
+Ubuntu 22.04 build/package evidence only; it is not completion of the
+interactive Wayland, Secret Service, passphrase, or performance gates, and it
+makes no X11 claim. The workspace packages are all configured non-publishable
+(`publish = false`) as part of the cargo-deny wildcard-path policy.
+
 ## Remaining Milestone 0 gates after the platform decision
 
-- Record a green candidate-SHA GitHub Actions run for macOS ARM64 and Ubuntu
-  22.04 x86_64, including the route-free deterministic suites and dependency,
-  advisory, and license policy jobs.
+- Re-run the green candidate-SHA GitHub Actions push and manual package runs
+  after any future candidate change; the recorded runs are for commit
+  `0950275c329d2ddf0d8f33ae4b529e8ff9a36206`.
 - Complete the Ubuntu Wayland manual checklist: Secret Service available
   first-launch/relaunch, unavailable-service passphrase create/wrong/unlock/
   relaunch, tray and multi-window lifecycle, theme/scaling, clipboard and
   terminal input, file/Git/external-editor workflows, redaction, and a full
-  runtime socket capture. The Ubuntu 22.04 CI package must also prove the
-  minimum glibc baseline.
+  runtime socket capture on the Ubuntu 22.04 CI package.
 - Complete the corresponding packaged macOS ARM64 common workflows and retain
   the full Keychain, menu-bar, terminal/TUI, multi-window, lifecycle, redaction,
   and runtime-network evidence.
 - Run the defined three-run performance matrix: startup p95, daemon/GUI RSS,
   idle CPU, ten-session concurrency, flood responsiveness, lifecycle leak,
   retention, and the approximately 100,000-file repository workload.
-- Resolve or disposition the 32-bit GIO module copied into the AppImage and the
-  repeated daemon attempts observed during isolated Secret Service timeout;
-  then finish the full security review with no unresolved critical/high issue,
-  release blocker, or flaky required gate.
+- Finish the security review with no unresolved critical/high issue, release
+  blocker, or flaky required gate; the repeated daemon attempts observed during
+  the isolated local Secret Service timeout remain open for release-candidate
+  repetition.
 
 ## Evidence matrix and open gates
 
 | Gate | Current automated evidence | Remaining release evidence |
 |---|---|---|
 | NET-001 provider boundary | Source/manifest/lock scan is local-pass and CI-gated | Review scan rule updates whenever supported vendors or dependency formats change |
-| NET-002 no-network tests | Route-free namespace job is defined for Rust and frontend suites | Link a green candidate-SHA CI run |
+| NET-002 no-network tests | Green candidate-SHA runs (push 31255203107, package 31255743665) executed both suites in route-free namespaces with namespace-identity proof | Re-run on any future candidate commit |
 | NET-003 local IPC only | Unix socket tests/source guard, one optimized macOS ARM64 startup capture, and one isolated Ubuntu-family Wayland startup capture; neither desktop nor daemon opened an Internet socket | Capture complete packaged common workflows on macOS ARM64 and Ubuntu x86_64 |
 | PERF-DAEMON-001 | One five-minute optimized idle run: 15.34 MiB max RSS, 0% average CPU | Three release normal-workload runs and worst-case result against ~50 MiB daemon target |
 | PERF-GUI-001 / PERF-IDLE-001 | One five-minute optimized idle run: 203.16 MiB max RSS, 0.14% average CPU, no sustained >2% interval | Three defined normal-workload runs against ~250 MiB GUI and idle-CPU targets |
@@ -263,9 +344,9 @@ Milestone 0.
 | PERF-REPO-001 | Bounded/lazy project operations have automated coverage | Generated ~100,000-file repository measurement and cancellation latency |
 
 No critical or high finding was identified in this scoped provider/network
-audit. Milestone 0 must not be called complete until the candidate CI link and
-the remaining platform/runtime/performance evidence above are recorded or the
-corresponding gate is explicitly returned to design review.
+audit. Milestone 0 must not be called complete until the remaining
+platform/runtime/performance evidence above is recorded or the corresponding
+gate is explicitly returned to design review.
 
 ## Local validation performed
 
